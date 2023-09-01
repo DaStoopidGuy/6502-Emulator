@@ -13,6 +13,7 @@ http://6502.org/users/obelisk/6502/registers.html
 ----------------------------
 */
 
+#include <assert.h>
 #include <stdio.h>
 
 #define Byte unsigned char
@@ -36,7 +37,7 @@ void Mem_Initialize(Mem *mem)
 typedef struct
 {
     Word PC;        // Program Counter - 16 bits
-    Byte SP;        // Stack Pointer - 8 bits    
+    Word SP;        // Stack Pointer - 8 bits    
     Byte A, X, Y;   // the only 3 Registers :P
 
     // Processor Status Flags
@@ -67,10 +68,47 @@ void CPU_Reset(CPU *cpu, Mem *mem)
     Mem_Initialize(mem);
 }
 
+Byte CPU_FetchByte(CPU *cpu, Mem *mem, unsigned int *Cycles)
+{
+    assert(cpu->PC < MAX_MEM);
+    Byte Data = mem->Data[cpu->PC];
+    cpu->PC++;
+    (*Cycles)--;
+    return Data;
+}
+
+// opcodes
+enum {
+    INS_LDA_IM = 0xA9
+};
+
+void CPU_Execute(CPU *cpu, Mem *mem, unsigned int Cycles)
+{
+    while (Cycles > 0)
+    {
+        Byte Ins = CPU_FetchByte(cpu, mem, &Cycles);
+        switch (Ins) {
+            case INS_LDA_IM:
+            {
+                Byte Value = CPU_FetchByte(cpu, mem, &Cycles);
+                cpu->A = Value;
+                cpu->Z = (cpu->A == 0);             // Set if A == 0
+                cpu->N = (cpu->A & 0b10000000) > 0; // Set if bit 7 of A is set
+                break;
+            }
+            default:
+            {
+                printf("Instruction not handled: %x\n", Ins);
+                break;
+            }
+        }
+    }
+}
+
 int main() {
     Mem mem;
     CPU cpu;
     CPU_Reset(&cpu, &mem);
-
+    CPU_Execute(&cpu, &mem, 2);
     return 0;
 }
