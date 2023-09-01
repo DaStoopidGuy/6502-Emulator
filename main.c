@@ -94,11 +94,13 @@ void CPU_Execute(CPU *cpu, Mem *mem, unsigned int Cycles)
                 cpu->A = Value;
                 cpu->Z = (cpu->A == 0);             // Set if A == 0
                 cpu->N = (cpu->A & 0b10000000) > 0; // Set if bit 7 of A is set
+
+                printf("INS_LDA_IM, %X\n", Value);
                 break;
             }
             default:
             {
-                printf("Instruction not handled: %x\n", Ins);
+                printf("Instruction not handled: %X\n", Ins);
                 break;
             }
         }
@@ -109,6 +111,12 @@ int main() {
     Mem mem;
     CPU cpu;
     CPU_Reset(&cpu, &mem);
+
+    // start - inline program
+    mem.Data[0xFFFC] = INS_LDA_IM;
+    mem.Data[0xFFFD] = 0x42;
+    // end - inline program
+
     CPU_Execute(&cpu, &mem, 2);
     return 0;
 }
